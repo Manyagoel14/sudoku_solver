@@ -1,121 +1,165 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from random import randint, shuffle
+import copy
 
 app = Flask(__name__)
 CORS(app)
 
 
+# ----------------------------------------------------------
+# BASIC UTILITIES
+# ----------------------------------------------------------
+
 def find_empty(board):
-    for i in range(9):
-        for j in range(9):
-            if board[i][j] == 0:
-                return (i, j)
+    for r in range(9):
+        for c in range(9):
+            if board[r][c] == 0:
+                return r, c
     return None
 
 
 def valid(board, pos, num):
-    # Check row
-    for j in range(9):
-        if board[pos[0]][j] == num and j != pos[1]:
-            return False
+    r, c = pos
 
-    # Check column
+    # Row
+    if num in board[r]:
+        return False
+
+    # Column
     for i in range(9):
-        if board[i][pos[1]] == num and i != pos[0]:
+        if board[i][c] == num:
             return False
 
-    # Check 3×3 box
-    box_row = pos[0] - pos[0] % 3
-    box_col = pos[1] - pos[1] % 3
-
+    # Box
+    br = r - r % 3
+    bc = c - c % 3
     for i in range(3):
         for j in range(3):
-            if board[box_row + i][box_col + j] == num:
+            if board[br + i][bc + j] == num:
                 return False
+
     return True
 
 
-def solve(board, steps):
-    """
-    Backtracking solver that also records each step.
+# ----------------------------------------------------------
+# SOLVER WITH VISUALIZATION STEPS
+# ----------------------------------------------------------
 
-    steps: list of dicts with:
-      { "row": int, "col": int, "value": int, "action": "place" | "remove" }
-    """
+def solve_with_steps(board, steps):
     empty = find_empty(board)
     if not empty:
         return True
 
-    row, col = empty
+    r, c = empty
 
     for num in range(1, 10):
-        if valid(board, (row, col), num):
-            # Try placing num
-            board[row][col] = num
-            steps.append({
-                "row": row,
-                "col": col,
-                "value": num,
-                "action": "place"
-            })
+        if valid(board, (r, c), num):
 
-            if solve(board, steps):
+            board[r][c] = num
+            steps.append({"row": r, "col": c, "value": num})
+
+            if solve_with_steps(board, steps):
                 return True
 
-            # Backtrack
-            board[row][col] = 0
-            steps.append({
-                "row": row,
-                "col": col,
-                "value": 0,
-                "action": "remove"
-            })
+            board[r][c] = 0
+            steps.append({"row": r, "col": c, "value": 0})
 
     return False
 
 
-def generate_board():
-    board = [[0 for _ in range(9)] for _ in range(9)]
+def solve(board):
+    """Normal solver, no visualization."""
+    empty = find_empty(board)
+    if not empty:
+        return True
 
-    # Fill diagonal boxes
-    for i in range(0, 9, 3):
+    r, c = empty
+    for num in range(1, 10):
+        if valid(board, (r, c), num):
+            board[r][c] = num
+            if solve(board):
+                return True
+            board[r][c] = 0
+
+    return False
+
+
+# ----------------------------------------------------------
+# GENERATE FULL SOLVED GRID
+# ----------------------------------------------------------
+
+def generate_full_board():
+    board = [[0] * 9 for _ in range(9)]
+
+    # Fill diagonal boxes first
+    for box in range(0, 9, 3):
         nums = list(range(1, 10))
         shuffle(nums)
         for r in range(3):
             for c in range(3):
-                board[i + r][i + c] = nums.pop()
+                board[box + r][box + c] = nums.pop()
 
-    # Fill remaining
-    def fill(board, row, col):
-        if row == 9:
-            return True
-        if col == 9:
-            return fill(board, row + 1, 0)
-        if board[row][col] != 0:
-            return fill(board, row, col + 1)
+    solve(board)
+    return board
 
-        for num in range(1, 10):
-            if valid(board, (row, col), num):
-                board[row][col] = num
-                if fill(board, row, col + 1):
-                    return True
-        board[row][col] = 0
-        return False
 
-    fill(board, 0, 0)
+# ----------------------------------------------------------
+# GENERATE PUZZLE
+# ----------------------------------------------------------
 
-    # Remove random 45–55 cells
-    for _ in range(randint(45, 55)):
+def generate_puzzle(remove_min, remove_max):
+    board = generate_full_board()
+
+    attempts = randint(remove_min, remove_max)
+
+    while attempts > 0:
         r, c = randint(0, 8), randint(0, 8)
+
+        if board[r][c] == 0:
+            continue
+
+        backup = board[r][c]
         board[r][c] = 0
+
+        # Check uniqueness
+        test = copy.deepcopy(board)
+        if not solve(test):
+            board[r][c] = backup
+        else:
+            attempts -= 1
 
     return board
 
 
-# ---------------------------
-#     API ENDPOINTS
-# ---------------------------
+# ----------------------------------------------------------
+# API ENDPOINTS
+# ----------------------------------------------------------
+
+@app.get("/generate")
+def generate_api():
+    difficulty = request.args.get("difficulty", "easy").lower()
+
+    if difficulty == "easy":
+        remove_min, remove_max = 38, 45
+    elif difficulty == "medium":
+        remove_min, remove_max = 46, 54
+    elif difficulty == "hard":
+        remove_min, remove_max = 56, 64
+    else:
+        remove_min, remove_max = 40, 45
+
+    puzzle = generate_puzzle(remove_min, remove_max)
+
+    # Return solution as well for GAME MODE
+    solution = copy.deepcopy(puzzle)
+    solve(solution)
+
+    return jsonify({
+        "puzzle": puzzle,
+        "solution": solution
+    })
+
 
 @app.post("/solve")
 def solve_api():
@@ -123,29 +167,19 @@ def solve_api():
     board = data.get("grid")
 
     if not board:
-        return jsonify({"error": "No grid provided"}), 400
+        return jsonify({"error": "Missing grid"}), 400
 
-    board_copy = [row[:] for row in board]
     steps = []
+    board_copy = copy.deepcopy(board)
 
-    if solve(board_copy, steps):
+    if solve_with_steps(board_copy, steps):
         return jsonify({
             "solution": board_copy,
             "steps": steps
         })
-    else:
-        return jsonify({"error": "No solution found"}), 400
 
+    return jsonify({"error": "Unsolvable"}), 400
 
-@app.get("/generate")
-def generate_api():
-    puzzle = generate_board()
-    return jsonify({"puzzle": puzzle})
-
-
-# ---------------------------
-#     RUN SERVER
-# ---------------------------
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
