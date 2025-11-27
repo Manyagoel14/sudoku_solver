@@ -6,24 +6,126 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sudoku Game + Solver</title>
 
-    <!-- React + Babel FIRST -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Tailwind AFTER React -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
     <style>
-        .cell {
-            width: 48px;
-            height: 48px;
-            text-align: center;
-            border: 1px solid #ccc;
-            font-size: 20px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        /* Bold 3×3 borders */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        .bg-gradient {
+            background: linear-gradient(135deg, #9333ea 0%, #4f46e5 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background: white;
+            padding: 32px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .title {
+            font-size: 48px;
+            color: #7c3aed;
+            text-align: center;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .status-bar {
+            text-align: center;
+            margin-bottom: 24px;
+            font-size: 20px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: #f3e8ff;
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        .time-badge {
+            display: inline-block;
+            background: #dbeafe;
+            padding: 8px 16px;
+            border-radius: 8px;
+            margin-left: 16px;
+        }
+
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .mode-btn {
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 18px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: #7c3aed;
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.3);
+            transform: scale(1.05);
+        }
+
+        .mode-btn.inactive {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .mode-btn.inactive:hover {
+            background: #d1d5db;
+        }
+
+        .grid-container {
+            margin: 32px auto;
+            padding: 16px;
+            background: #f3f4f6;
+            border-radius: 16px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: fit-content;
+        }
+
+        .row {
+            display: flex;
+        }
+
+        .cell {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            border: 1px solid #ccc;
+            font-size: 22px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
         .cell:nth-child(3n+1) {
             border-left: 3px solid black;
         }
@@ -47,14 +149,85 @@
         }
 
         .wrong {
-            background: #ffcccc !important;
+            background: #fee2e2 !important;
+            color: #dc2626;
+            font-weight: 600;
         }
+
+        .correct {
+            background: #d1fae5 !important;
+            color: #047857;
+            font-weight: 600;
+        }
+
+        .cell:focus {
+            background: #fef3c7;
+            box-shadow: 0 0 0 2px #fbbf24;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+            color: white;
+        }
+
+        .btn:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            transform: scale(1.05);
+        }
+
+        .btn-green { background: #10b981; }
+        .btn-green:hover { background: #059669; }
+        .btn-yellow { background: #eab308; }
+        .btn-yellow:hover { background: #ca8a04; }
+        .btn-red { background: #ef4444; }
+        .btn-red:hover { background: #dc2626; }
+        .btn-blue { background: #3b82f6; }
+        .btn-blue:hover { background: #2563eb; }
+        .btn-indigo { background: #6366f1; }
+        .btn-indigo:hover { background: #4f46e5; }
+
+        .info-box {
+            margin-top: 32px;
+            text-align: center;
+        }
+
+        .info-content {
+            display: inline-block;
+            background: #eff6ff;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #374151;
+        }
+
+        .info-highlight {
+            font-weight: 700;
+        }
+
+        .text-green { color: #059669; }
+        .text-red { color: #dc2626; }
+        .text-blue { color: #2563eb; }
     </style>
 </head>
 
-<body class="bg-gradient-to-br from-purple-600 to-indigo-700 min-h-screen flex items-center justify-center p-6">
+<body class="bg-gradient">
 
-    <div id="root" class="w-full max-w-3xl"></div>
+    <div id="root"></div>
 
     <script type="text/babel">
 
@@ -62,14 +235,16 @@
 
         function App() {
 
-            const empty = () => Array(9).fill().map(() => Array(9).fill(""));
+            const empty = () => Array(9).fill().map(() => Array(9).fill(0));
 
             const [board, setBoard] = useState(empty());
             const [solution, setSolution] = useState(empty());
             const [given, setGiven] = useState(empty());
             const [time, setTime] = useState(0);
             const [running, setRunning] = useState(false);
-            const [status, setStatus] = useState("Playing");
+            const [status, setStatus] = useState("Select a difficulty to start playing");
+            const [mode, setMode] = useState("play"); // "play" or "custom"
+            const [customInput, setCustomInput] = useState(empty());
 
             // Timer
             useEffect(() => {
@@ -85,31 +260,31 @@
 
             // Load puzzle
             async function loadPuzzle(level) {
-                const res = await fetch(`http://localhost:5000/generate?difficulty=${level}`);
-                const data = await res.json();
+                try {
+                    const res = await fetch(`http://localhost:5000/generate?difficulty=${level}`);
+                    const data = await res.json();
 
-                setBoard(data.puzzle);
-                setSolution(data.solution);
-                setGiven(data.puzzle.map(row => row.map(v => v !== 0)));
+                    setBoard(data.puzzle);
+                    setSolution(data.solution);
+                    setGiven(data.puzzle.map(row => row.map(v => v !== 0)));
 
-                setTime(0);
-                setRunning(true);
-                setStatus("Playing");
+                    setTime(0);
+                    setRunning(true);
+                    setStatus("Playing");
+                    setMode("play");
+                } catch (err) {
+                    alert("⚠️ Error loading puzzle. Make sure Flask server is running:\n\npython app.py");
+                }
             }
 
-            // Change cell
+            // Change cell in play mode
             function handleChange(r, c, val) {
                 if (given[r][c]) return;
                 if (!/^[1-9]?$/.test(val)) return;
 
-                const newBoard = structuredClone(board);
-                newBoard[r][c] = val ? Number(val) : "";
+                const newBoard = board.map(row => [...row]);
+                newBoard[r][c] = val ? Number(val) : 0;
                 setBoard(newBoard);
-
-                const cell = document.getElementById(`cell-${r}-${c}`);
-
-                if (val && Number(val) !== solution[r][c]) cell.classList.add("wrong");
-                else cell.classList.remove("wrong");
 
                 checkWin(newBoard);
             }
@@ -118,16 +293,22 @@
             function checkWin(grid) {
                 for (let r = 0; r < 9; r++) {
                     for (let c = 0; c < 9; c++) {
-                        if (Number(grid[r][c]) !== solution[r][c]) return;
+                        if (grid[r][c] !== solution[r][c]) return;
                     }
                 }
 
                 setRunning(false);
-                setStatus("Completed");
-                alert("🎉 You solved the Sudoku!");
+                setStatus("🎉 Completed!");
+                setTimeout(() => {
+                    alert(`🎉 Congratulations!\n\nYou solved the Sudoku in ${formatTime()}!`);
+                }, 100);
             }
 
             function solveInstant() {
+                if (solution.every(row => row.every(cell => cell === 0))) {
+                    alert("Please load a puzzle first!");
+                    return;
+                }
                 setBoard(solution);
                 setRunning(false);
                 setStatus("Solved");
@@ -135,48 +316,145 @@
 
             // Visualization
             async function visualize() {
-                const res = await fetch("http://localhost:5000/solve", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ grid: board })
-                });
-
-                const data = await res.json();
-
-                for (const s of data.steps) {
-                    await new Promise(res => setTimeout(res, 25));
-                    setBoard(prev => {
-                        let b = structuredClone(prev);
-                        b[s.row][s.col] = s.value;
-                        return b;
-                    });
+                if (board.every(row => row.every(cell => cell === 0))) {
+                    alert("Please load a puzzle first!");
+                    return;
                 }
-                setRunning(false);
+
+                try {
+                    const res = await fetch("http://localhost:5000/solve", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ grid: board })
+                    });
+
+                    const data = await res.json();
+
+                    if (data.error) {
+                        alert("❌ This puzzle is unsolvable!");
+                        return;
+                    }
+
+                    setRunning(false);
+                    setStatus("Visualizing...");
+
+                    for (const s of data.steps) {
+                        await new Promise(resolve => setTimeout(resolve, 15));
+                        setBoard(prev => {
+                            const b = prev.map(row => [...row]);
+                            b[s.row][s.col] = s.value;
+                            return b;
+                        });
+                    }
+                    setStatus("Visualization Complete");
+                } catch (err) {
+                    alert("⚠️ Error: Make sure Flask server is running!");
+                }
+            }
+
+            // Handle custom input
+            function handleCustomInput(r, c, val) {
+                if (!/^[1-9]?$/.test(val)) return;
+
+                const newInput = customInput.map(row => [...row]);
+                newInput[r][c] = val ? Number(val) : 0;
+                setCustomInput(newInput);
+            }
+
+            // Solve custom puzzle
+            async function solveCustom() {
+                // Check if anything is entered
+                const hasInput = customInput.some(row => row.some(cell => cell !== 0));
+                if (!hasInput) {
+                    alert("Please enter some numbers first!");
+                    return;
+                }
+
+                try {
+                    const res = await fetch("http://localhost:5000/solve", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ grid: customInput })
+                    });
+
+                    const data = await res.json();
+
+                    if (data.error) {
+                        alert("❌ This puzzle is unsolvable! Please check your input.");
+                        return;
+                    }
+
+                    setBoard(customInput);
+                    setSolution(data.solution);
+                    setGiven(customInput.map(row => row.map(v => v !== 0)));
+                    setTime(0);
+                    setRunning(true);
+                    setStatus("Playing Custom Puzzle");
+                    setMode("play");
+                } catch (err) {
+                    alert("⚠️ Error: Make sure Flask server is running!");
+                }
+            }
+
+            function clearCustom() {
+                setCustomInput(empty());
+            }
+
+            // Get cell class for styling
+            function getCellClass(r, c) {
+                if (mode === "custom") return "cell";
+                
+                if (given[r][c]) return "cell given";
+                
+                if (board[r][c] === 0) return "cell";
+                
+                if (board[r][c] === solution[r][c]) return "cell correct";
+                
+                return "cell wrong";
             }
 
             return (
-                <div className="bg-white p-6 rounded-2xl shadow-2xl">
+                <div className="container">
 
-                    <h1 className="text-4xl text-purple-700 text-center font-extrabold">
+                    <h1 className="title">
                         Sudoku Game + Solver
                     </h1>
 
-                    <div className="text-center mt-2 text-lg font-semibold">
-                        Status: {status} | Time: {formatTime()}
+                    <div className="status-bar">
+                        <span className="status-badge">
+                            {status}
+                        </span>
+                        <span className="time-badge">
+                            ⏱️ {formatTime()}
+                        </span>
+                    </div>
+
+                    {/* MODE SELECTOR */}
+                    <div className="mode-selector">
+                        <button 
+                            onClick={() => setMode("play")}
+                            className={`mode-btn ${mode === "play" ? "active" : "inactive"}`}>
+                            🎮 Play Mode
+                        </button>
+                        <button 
+                            onClick={() => setMode("custom")}
+                            className={`mode-btn ${mode === "custom" ? "active" : "inactive"}`}>
+                            ✏️ Enter Custom Puzzle
+                        </button>
                     </div>
 
                     {/* GRID */}
-                    <div className="mx-auto my-6 p-3 bg-gray-200 rounded-xl">
-                        {board.map((row, r) => (
-                            <div key={r} className="row flex">
+                    <div className="grid-container">
+                        {(mode === "play" ? board : customInput).map((row, r) => (
+                            <div key={r} className="row">
                                 {row.map((val, c) => (
                                     <input
                                         key={c}
-                                        id={`cell-${r}-${c}`}
                                         value={val === 0 ? "" : val}
-                                        className={`cell ${given[r][c] ? "given" : ""}`}
-                                        onChange={e => handleChange(r, c, e.target.value)}
-                                        readOnly={given[r][c]}
+                                        className={getCellClass(r, c)}
+                                        onChange={e => mode === "play" ? handleChange(r, c, e.target.value) : handleCustomInput(r, c, e.target.value)}
+                                        readOnly={mode === "play" && given[r][c]}
+                                        maxLength="1"
                                     />
                                 ))}
                             </div>
@@ -184,33 +462,66 @@
                     </div>
 
                     {/* BUTTONS */}
-                    <div className="flex flex-wrap justify-center gap-3">
+                    {mode === "play" ? (
+                        <div>
+                            <div className="button-group">
+                                <button onClick={() => loadPuzzle("easy")}
+                                    className="btn btn-green">
+                                    😊 Easy
+                                </button>
 
-                        <button onClick={() => loadPuzzle("easy")}
-                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">
-                            Easy
-                        </button>
+                                <button onClick={() => loadPuzzle("medium")}
+                                    className="btn btn-yellow">
+                                    🤔 Medium
+                                </button>
 
-                        <button onClick={() => loadPuzzle("medium")}
-                            className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg">
-                            Medium
-                        </button>
+                                <button onClick={() => loadPuzzle("hard")}
+                                    className="btn btn-red">
+                                    😤 Hard
+                                </button>
+                            </div>
 
-                        <button onClick={() => loadPuzzle("hard")}
-                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg">
-                            Hard
-                        </button>
+                            <div className="button-group">
+                                <button onClick={solveInstant}
+                                    className="btn btn-blue">
+                                    ⚡ Solve Instantly
+                                </button>
 
-                        <button onClick={solveInstant}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
-                            Solve
-                        </button>
+                                <button onClick={visualize}
+                                    className="btn btn-indigo">
+                                    👁️ Visualize Solution
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="button-group">
+                            <button onClick={solveCustom}
+                                className="btn btn-green">
+                                ✅ Solve & Play This Puzzle
+                            </button>
 
-                        <button onClick={visualize}
-                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
-                            Visualize
-                        </button>
+                            <button onClick={clearCustom}
+                                className="btn btn-red">
+                                🗑️ Clear Grid
+                            </button>
+                        </div>
+                    )}
 
+                    {/* INFO */}
+                    <div className="info-box">
+                        <div className="info-content">
+                            {mode === "play" ? (
+                                <p>
+                                    <span className="info-highlight text-green">✓ Green</span> = Correct | 
+                                    <span className="info-highlight text-red"> ✗ Red</span> = Wrong | 
+                                    <span className="info-highlight text-blue"> Blue</span> = Given numbers
+                                </p>
+                            ) : (
+                                <p>
+                                    Enter your own Sudoku puzzle and click <span className="info-highlight">"Solve & Play"</span> to verify and start playing!
+                                </p>
+                            )}
+                        </div>
                     </div>
 
                 </div>

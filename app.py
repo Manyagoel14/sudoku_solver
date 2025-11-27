@@ -136,7 +136,7 @@ def generate_puzzle(remove_min, remove_max):
 # API ENDPOINTS
 # ----------------------------------------------------------
 
-@app.get("/generate")
+@app.route("/generate", methods=["GET"])
 def generate_api():
     difficulty = request.args.get("difficulty", "easy").lower()
 
@@ -145,7 +145,7 @@ def generate_api():
     elif difficulty == "medium":
         remove_min, remove_max = 46, 54
     elif difficulty == "hard":
-        remove_min, remove_max = 56, 64
+        remove_min, remove_max = 55, 64
     else:
         remove_min, remove_max = 40, 45
 
@@ -161,7 +161,7 @@ def generate_api():
     })
 
 
-@app.post("/solve")
+@app.route("/solve", methods=["POST"])
 def solve_api():
     data = request.json
     board = data.get("grid")
