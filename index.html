@@ -22,7 +22,7 @@
         }
 
         .bg-gradient {
-            background: linear-gradient(135deg, #9333ea 0%, #4f46e5 100%);
+            background: linear-gradient(135deg, #b3f1ec 0%, #6a9bf0 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -32,7 +32,7 @@
 
         .container {
             width: 100%;
-            max-width: 1200px;
+            max-width: 2000px;
             background: white;
             padding: 32px;
             border-radius: 24px;
@@ -41,7 +41,7 @@
 
         .title {
             font-size: 48px;
-            color: #7c3aed;
+            color: #6a9bf0;
             text-align: center;
             font-weight: 800;
             margin-bottom: 16px;
@@ -57,12 +57,14 @@
 
         .status-badge {
             display: inline-block;
-            background: #f3e8ff;
+            background: #e3cff9;
             padding: 8px 16px;
             border-radius: 8px;
         }
 
         .time-badge {
+            min-width: 150px;
+            min-height: 63px;
             display: inline-block;
             background: #dbeafe;
             padding: 8px 16px;
@@ -73,11 +75,19 @@
         .mode-selector {
             display: flex;
             justify-content: center;
-            gap: 16px;
-            margin-bottom: 24px;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            flex-wrap: nowrap;
+            /* THIS keeps everything in ONE LINE */
         }
 
+
         .mode-btn {
+            min-width: 150px;
+            /* same width for both */
+            min-height: 60px;
+            text-align: center;
             padding: 12px 24px;
             border-radius: 12px;
             font-weight: 700;
@@ -190,16 +200,45 @@
             transform: scale(1.05);
         }
 
-        .btn-green { background: #10b981; }
-        .btn-green:hover { background: #059669; }
-        .btn-yellow { background: #eab308; }
-        .btn-yellow:hover { background: #ca8a04; }
-        .btn-red { background: #ef4444; }
-        .btn-red:hover { background: #dc2626; }
-        .btn-blue { background: #3b82f6; }
-        .btn-blue:hover { background: #2563eb; }
-        .btn-indigo { background: #6366f1; }
-        .btn-indigo:hover { background: #4f46e5; }
+        .btn-green {
+            background: #10b981;
+        }
+
+        .btn-green:hover {
+            background: #059669;
+        }
+
+        .btn-yellow {
+            background: #eab308;
+        }
+
+        .btn-yellow:hover {
+            background: #ca8a04;
+        }
+
+        .btn-red {
+            background: #ef4444;
+        }
+
+        .btn-red:hover {
+            background: #dc2626;
+        }
+
+        .btn-blue {
+            background: #3b82f6;
+        }
+
+        .btn-blue:hover {
+            background: #2563eb;
+        }
+
+        .btn-indigo {
+            background: #6366f1;
+        }
+
+        .btn-indigo:hover {
+            background: #4f46e5;
+        }
 
         .info-box {
             margin-top: 32px;
@@ -219,9 +258,17 @@
             font-weight: 700;
         }
 
-        .text-green { color: #059669; }
-        .text-red { color: #dc2626; }
-        .text-blue { color: #2563eb; }
+        .text-green {
+            color: #059669;
+        }
+
+        .text-red {
+            color: #dc2626;
+        }
+
+        .text-blue {
+            color: #2563eb;
+        }
     </style>
 </head>
 
@@ -273,7 +320,7 @@
                     setStatus("Playing");
                     setMode("play");
                 } catch (err) {
-                    alert("⚠️ Error loading puzzle. Make sure Flask server is running:\n\npython app.py");
+                    alert("Error loading puzzle. Make sure Flask server is running:\n\npython app.py");
                 }
             }
 
@@ -298,9 +345,9 @@
                 }
 
                 setRunning(false);
-                setStatus("🎉 Completed!");
+                setStatus("Completed!");
                 setTimeout(() => {
-                    alert(`🎉 Congratulations!\n\nYou solved the Sudoku in ${formatTime()}!`);
+                    alert(`You solved the Sudoku in ${formatTime()}!`);
                 }, 100);
             }
 
@@ -331,7 +378,7 @@
                     const data = await res.json();
 
                     if (data.error) {
-                        alert("❌ This puzzle is unsolvable!");
+                        alert("This puzzle is unsolvable!");
                         return;
                     }
 
@@ -348,7 +395,7 @@
                     }
                     setStatus("Visualization Complete");
                 } catch (err) {
-                    alert("⚠️ Error: Make sure Flask server is running!");
+                    alert("Error: Make sure Flask server is running!");
                 }
             }
 
@@ -380,7 +427,7 @@
                     const data = await res.json();
 
                     if (data.error) {
-                        alert("❌ This puzzle is unsolvable! Please check your input.");
+                        alert("This puzzle is unsolvable! Please check your input.");
                         return;
                     }
 
@@ -392,7 +439,7 @@
                     setStatus("Playing Custom Puzzle");
                     setMode("play");
                 } catch (err) {
-                    alert("⚠️ Error: Make sure Flask server is running!");
+                    alert("Error: Make sure Flask server is running!");
                 }
             }
 
@@ -403,13 +450,13 @@
             // Get cell class for styling
             function getCellClass(r, c) {
                 if (mode === "custom") return "cell";
-                
+
                 if (given[r][c]) return "cell given";
-                
+
                 if (board[r][c] === 0) return "cell";
-                
+
                 if (board[r][c] === solution[r][c]) return "cell correct";
-                
+
                 return "cell wrong";
             }
 
@@ -417,32 +464,29 @@
                 <div className="container">
 
                     <h1 className="title">
-                        Sudoku Game + Solver
+                        Sudoku
                     </h1>
-
-                    <div className="status-bar">
-                        <span className="status-badge">
-                            {status}
-                        </span>
-                        <span className="time-badge">
-                            ⏱️ {formatTime()}
-                        </span>
-                    </div>
 
                     {/* MODE SELECTOR */}
                     <div className="mode-selector">
-                        <button 
+                        <button
                             onClick={() => setMode("play")}
                             className={`mode-btn ${mode === "play" ? "active" : "inactive"}`}>
-                            🎮 Play Mode
+                            Play Mode
                         </button>
-                        <button 
+
+                        <span className="mode-selector time-badge">
+                            {formatTime()}
+                        </span>
+                        <button
                             onClick={() => setMode("custom")}
                             className={`mode-btn ${mode === "custom" ? "active" : "inactive"}`}>
-                            ✏️ Enter Custom Puzzle
+                            Custom Puzzle
                         </button>
                     </div>
+                    <div className="status-bar">
 
+                    </div>
                     {/* GRID */}
                     <div className="grid-container">
                         {(mode === "play" ? board : customInput).map((row, r) => (
@@ -467,29 +511,29 @@
                             <div className="button-group">
                                 <button onClick={() => loadPuzzle("easy")}
                                     className="btn btn-green">
-                                    😊 Easy
+                                    Easy
                                 </button>
 
                                 <button onClick={() => loadPuzzle("medium")}
                                     className="btn btn-yellow">
-                                    🤔 Medium
+                                    Medium
                                 </button>
 
                                 <button onClick={() => loadPuzzle("hard")}
                                     className="btn btn-red">
-                                    😤 Hard
+                                    Hard
                                 </button>
                             </div>
 
                             <div className="button-group">
                                 <button onClick={solveInstant}
                                     className="btn btn-blue">
-                                    ⚡ Solve Instantly
+                                    Solve Instantly
                                 </button>
 
                                 <button onClick={visualize}
                                     className="btn btn-indigo">
-                                    👁️ Visualize Solution
+                                    Visualize Solution
                                 </button>
                             </div>
                         </div>
@@ -497,32 +541,18 @@
                         <div className="button-group">
                             <button onClick={solveCustom}
                                 className="btn btn-green">
-                                ✅ Solve & Play This Puzzle
+                                Solve & Play This Puzzle
                             </button>
 
                             <button onClick={clearCustom}
                                 className="btn btn-red">
-                                🗑️ Clear Grid
+                                Clear Grid
                             </button>
                         </div>
                     )}
 
                     {/* INFO */}
-                    <div className="info-box">
-                        <div className="info-content">
-                            {mode === "play" ? (
-                                <p>
-                                    <span className="info-highlight text-green">✓ Green</span> = Correct | 
-                                    <span className="info-highlight text-red"> ✗ Red</span> = Wrong | 
-                                    <span className="info-highlight text-blue"> Blue</span> = Given numbers
-                                </p>
-                            ) : (
-                                <p>
-                                    Enter your own Sudoku puzzle and click <span className="info-highlight">"Solve & Play"</span> to verify and start playing!
-                                </p>
-                            )}
-                        </div>
-                    </div>
+
 
                 </div>
             );
