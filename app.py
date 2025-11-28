@@ -1,10 +1,14 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from random import randint, shuffle
 import copy
 
 app = Flask(__name__)
 CORS(app)
+
+@app.get("/")
+def home():
+    return render_template("index.html")
 
 
 # ----------------------------------------------------------
@@ -43,44 +47,104 @@ def valid(board, pos, num):
 
 
 # ----------------------------------------------------------
-# SOLVER WITH VISUALIZATION STEPS
+# MRV HELPERS
+# ----------------------------------------------------------
+
+def get_domain(board, pos):
+    """Return the list of valid numbers for position pos (r,c)."""
+    r, c = pos
+    domain = []
+    for num in range(1, 10):
+        if valid(board, (r, c), num):
+            domain.append(num)
+    return domain
+
+
+def find_empty_mrv(board):
+    """
+    Find the empty cell with Minimum Remaining Values (smallest domain).
+    Returns (r, c, domain) if there is an empty cell, or None if board is full.
+    If any empty cell has an empty domain, returns that cell with domain=[] (causes immediate backtrack).
+    """
+    best_pos = None
+    best_domain = None
+    min_size = 10  # larger than any possible domain
+
+    for r in range(9):
+        for c in range(9):
+            if board[r][c] == 0:
+                domain = get_domain(board, (r, c))
+                size = len(domain)
+
+                # If any variable has zero possibilities, immediate fail (prune)
+                if size == 0:
+                    return r, c, domain
+
+                if size < min_size:
+                    min_size = size
+                    best_pos = (r, c)
+                    best_domain = domain
+
+                    # If we find a singleton domain, that's optimal (can't get smaller)
+                    if min_size == 1:
+                        return best_pos[0], best_pos[1], best_domain
+
+    if best_pos is None:
+        return None
+    return best_pos[0], best_pos[1], best_domain
+
+
+# ----------------------------------------------------------
+# SOLVER WITH MRV + VISUALIZATION STEPS
 # ----------------------------------------------------------
 
 def solve_with_steps(board, steps):
-    empty = find_empty(board)
-    if not empty:
-        return True
+    """
+    Backtracking solver that uses MRV to pick the next cell.
+    Records each placement (and each backtrack) into steps for visualization.
+    """
+    empty_info = find_empty_mrv(board)
+    if not empty_info:
+        return True  # solved
 
-    r, c = empty
+    r, c, domain = empty_info
 
-    for num in range(1, 10):
-        if valid(board, (r, c), num):
+    # If domain is empty, this branch fails immediately
+    if not domain:
+        return False
 
-            board[r][c] = num
-            steps.append({"row": r, "col": c, "value": num})
+    # Optionally apply a heuristic like LCV by sorting domain by
+    # how many options they leave for neighbors. (Not implemented here.)
+    for num in domain:
+        board[r][c] = num
+        steps.append({"row": r, "col": c, "value": num})
 
-            if solve_with_steps(board, steps):
-                return True
+        if solve_with_steps(board, steps):
+            return True
 
-            board[r][c] = 0
-            steps.append({"row": r, "col": c, "value": 0})
+        # backtrack
+        board[r][c] = 0
+        steps.append({"row": r, "col": c, "value": 0})
 
     return False
 
 
 def solve(board):
-    """Normal solver, no visualization."""
-    empty = find_empty(board)
-    if not empty:
+    """Normal MRV-based solver, no visualization."""
+    empty_info = find_empty_mrv(board)
+    if not empty_info:
         return True
 
-    r, c = empty
-    for num in range(1, 10):
-        if valid(board, (r, c), num):
-            board[r][c] = num
-            if solve(board):
-                return True
-            board[r][c] = 0
+    r, c, domain = empty_info
+
+    if not domain:
+        return False
+
+    for num in domain:
+        board[r][c] = num
+        if solve(board):
+            return True
+        board[r][c] = 0
 
     return False
 
@@ -92,7 +156,7 @@ def solve(board):
 def generate_full_board():
     board = [[0] * 9 for _ in range(9)]
 
-    # Fill diagonal boxes first
+    # Fill diagonal boxes first (fast seeding)
     for box in range(0, 9, 3):
         nums = list(range(1, 10))
         shuffle(nums)
@@ -100,6 +164,7 @@ def generate_full_board():
             for c in range(3):
                 board[box + r][box + c] = nums.pop()
 
+    # Use MRV solver to fill the rest (works fine)
     solve(board)
     return board
 
@@ -122,7 +187,7 @@ def generate_puzzle(remove_min, remove_max):
         backup = board[r][c]
         board[r][c] = 0
 
-        # Check uniqueness
+        # Check uniqueness (simple check: solvable at least once)
         test = copy.deepcopy(board)
         if not solve(test):
             board[r][c] = backup
