@@ -79,13 +79,11 @@
             gap: 20px;
             width: 100%;
             flex-wrap: nowrap;
-            /* THIS keeps everything in ONE LINE */
         }
 
 
         .mode-btn {
             min-width: 150px;
-            /* same width for both */
             min-height: 60px;
             text-align: center;
             padding: 12px 24px;
@@ -273,27 +271,20 @@
 </head>
 
 <body class="bg-gradient">
-
     <div id="root"></div>
-
     <script type="text/babel">
-
         const { useState, useEffect } = React;
-
         function App() {
-
             const empty = () => Array(9).fill().map(() => Array(9).fill(0));
-
             const [board, setBoard] = useState(empty());
             const [solution, setSolution] = useState(empty());
             const [given, setGiven] = useState(empty());
             const [time, setTime] = useState(0);
             const [running, setRunning] = useState(false);
             const [status, setStatus] = useState("Select a difficulty to start playing");
-            const [mode, setMode] = useState("play"); // "play" or "custom"
+            const [mode, setMode] = useState("play");
             const [customInput, setCustomInput] = useState(empty());
-
-            // Timer
+            //timer
             useEffect(() => {
                 let t = null;
                 if (running) {
@@ -305,7 +296,7 @@
             const formatTime = () =>
                 `${String(Math.floor(time / 60)).padStart(2, "0")}:${String(time % 60).padStart(2, "0")}`;
 
-            // Load puzzle
+            //loads puzzle
             async function loadPuzzle(level) {
                 try {
                     const res = await fetch(`http://localhost:5000/generate?difficulty=${level}`);
@@ -324,7 +315,6 @@
                 }
             }
 
-            // Change cell in play mode
             function handleChange(r, c, val) {
                 if (given[r][c]) return;
                 if (!/^[1-9]?$/.test(val)) return;
@@ -336,7 +326,7 @@
                 checkWin(newBoard);
             }
 
-            // Check for win
+            //check if solved correctly
             function checkWin(grid) {
                 for (let r = 0; r < 9; r++) {
                     for (let c = 0; c < 9; c++) {
@@ -361,7 +351,7 @@
                 setStatus("Solved");
             }
 
-            // Visualization
+            //visualization of our algo
             async function visualize() {
                 if (board.every(row => row.every(cell => cell === 0))) {
                     alert("Please load a puzzle first!");
@@ -399,7 +389,7 @@
                 }
             }
 
-            // Handle custom input
+            //custom input
             function handleCustomInput(r, c, val) {
                 if (!/^[1-9]?$/.test(val)) return;
 
@@ -408,9 +398,9 @@
                 setCustomInput(newInput);
             }
 
-            // Solve custom puzzle
+            //solve custom puzzle
             async function solveCustom() {
-                // Check if anything is entered
+                //check if anything is entered by user
                 const hasInput = customInput.some(row => row.some(cell => cell !== 0));
                 if (!hasInput) {
                     alert("Please enter some numbers first!");
@@ -447,7 +437,6 @@
                 setCustomInput(empty());
             }
 
-            // Get cell class for styling
             function getCellClass(r, c) {
                 if (mode === "custom") return "cell";
 
@@ -467,7 +456,7 @@
                         Sudoku
                     </h1>
 
-                    {/* MODE SELECTOR */}
+                    {/*MODE SELECTOR*/}
                     <div className="mode-selector">
                         <button
                             onClick={() => setMode("play")}
@@ -487,7 +476,7 @@
                     <div className="status-bar">
 
                     </div>
-                    {/* GRID */}
+                    {/*GRID*/}
                     <div className="grid-container">
                         {(mode === "play" ? board : customInput).map((row, r) => (
                             <div key={r} className="row">
@@ -505,7 +494,7 @@
                         ))}
                     </div>
 
-                    {/* BUTTONS */}
+                    {/*BUTTONS*/}
                     {mode === "play" ? (
                         <div>
                             <div className="button-group">
@@ -551,7 +540,7 @@
                         </div>
                     )}
 
-                    {/* INFO */}
+                    {/*INFO*/}
 
 
                 </div>

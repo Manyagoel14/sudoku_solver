@@ -10,11 +10,7 @@ CORS(app)
 def home():
     return render_template("index.html")
 
-
-# ----------------------------------------------------------
-# BASIC UTILITIES
-# ----------------------------------------------------------
-
+#all it does is checks whether all the tiles on the grid are empty i.e. 0
 def find_empty(board):
     for r in range(9):
         for c in range(9):
@@ -22,36 +18,33 @@ def find_empty(board):
                 return r, c
     return None
 
-
+#this is one of the main functions for our algo
+#for a num to be placed at a particular tile, three rules need to be true
 def valid(board, pos, num):
     r, c = pos
-
-    # Row
+    #rule 1- should not be in row
     if num in board[r]:
         return False
 
-    # Column
+    #rule 2- should not be in column
     for i in range(9):
         if board[i][c] == num:
             return False
 
-    # Box
+    #rule 3- should not be in that box
     br = r - r % 3
     bc = c - c % 3
     for i in range(3):
         for j in range(3):
             if board[br + i][bc + j] == num:
                 return False
-
     return True
 
-
-# ----------------------------------------------------------
-# MRV HELPERS
-# ----------------------------------------------------------
-
+#this is another imp function
+#MRV algo
+#checks how many numbers betwween 1-9 are valid for a particular tile
+#this becomes the domain of that tile
 def get_domain(board, pos):
-    """Return the list of valid numbers for position pos (r,c)."""
     r, c = pos
     domain = []
     for num in range(1, 10):
@@ -59,24 +52,18 @@ def get_domain(board, pos):
             domain.append(num)
     return domain
 
-
+#this finds empty cells for mrv
 def find_empty_mrv(board):
-    """
-    Find the empty cell with Minimum Remaining Values (smallest domain).
-    Returns (r, c, domain) if there is an empty cell, or None if board is full.
-    If any empty cell has an empty domain, returns that cell with domain=[] (causes immediate backtrack).
-    """
     best_pos = None
     best_domain = None
-    min_size = 10  # larger than any possible domain
+    min_size = 10
 
     for r in range(9):
         for c in range(9):
             if board[r][c] == 0:
                 domain = get_domain(board, (r, c))
                 size = len(domain)
-
-                # If any variable has zero possibilities, immediate fail (prune)
+                
                 if size == 0:
                     return r, c, domain
 
@@ -85,36 +72,23 @@ def find_empty_mrv(board):
                     best_pos = (r, c)
                     best_domain = domain
 
-                    # If we find a singleton domain, that's optimal (can't get smaller)
-                    if min_size == 1:
+                    if min_size == 1: #if domain len=1 then use it since this is the minimum
                         return best_pos[0], best_pos[1], best_domain
 
     if best_pos is None:
         return None
     return best_pos[0], best_pos[1], best_domain
 
-
-# ----------------------------------------------------------
-# SOLVER WITH MRV + VISUALIZATION STEPS
-# ----------------------------------------------------------
-
+#the code to visualise our algo
 def solve_with_steps(board, steps):
-    """
-    Backtracking solver that uses MRV to pick the next cell.
-    Records each placement (and each backtrack) into steps for visualization.
-    """
     empty_info = find_empty_mrv(board)
     if not empty_info:
-        return True  # solved
+        return True
 
     r, c, domain = empty_info
-
-    # If domain is empty, this branch fails immediately
     if not domain:
         return False
 
-    # Optionally apply a heuristic like LCV by sorting domain by
-    # how many options they leave for neighbors. (Not implemented here.)
     for num in domain:
         board[r][c] = num
         steps.append({"row": r, "col": c, "value": num})
@@ -122,15 +96,13 @@ def solve_with_steps(board, steps):
         if solve_with_steps(board, steps):
             return True
 
-        # backtrack
         board[r][c] = 0
         steps.append({"row": r, "col": c, "value": 0})
 
     return False
 
-
+#this directly solves our sudoku
 def solve(board):
-    """Normal MRV-based solver, no visualization."""
     empty_info = find_empty_mrv(board)
     if not empty_info:
         return True
@@ -145,39 +117,26 @@ def solve(board):
         if solve(board):
             return True
         board[r][c] = 0
-
     return False
 
-
-# ----------------------------------------------------------
-# GENERATE FULL SOLVED GRID
-# ----------------------------------------------------------
-
+#generate a grid
+#step 1 fill diagonal 3 boxes in a random order
+#step 2 solve the board
+#step 3 now remove random numbers from it based on the difficultly level
 def generate_full_board():
     board = [[0] * 9 for _ in range(9)]
-
-    # Fill diagonal boxes first (fast seeding)
     for box in range(0, 9, 3):
         nums = list(range(1, 10))
         shuffle(nums)
         for r in range(3):
             for c in range(3):
                 board[box + r][box + c] = nums.pop()
-
-    # Use MRV solver to fill the rest (works fine)
     solve(board)
     return board
 
-
-# ----------------------------------------------------------
-# GENERATE PUZZLE
-# ----------------------------------------------------------
-
 def generate_puzzle(remove_min, remove_max):
     board = generate_full_board()
-
     attempts = randint(remove_min, remove_max)
-
     while attempts > 0:
         r, c = randint(0, 8), randint(0, 8)
 
@@ -187,7 +146,7 @@ def generate_puzzle(remove_min, remove_max):
         backup = board[r][c]
         board[r][c] = 0
 
-        # Check uniqueness (simple check: solvable at least once)
+        #simple check: solvable at least once
         test = copy.deepcopy(board)
         if not solve(test):
             board[r][c] = backup
@@ -197,10 +156,7 @@ def generate_puzzle(remove_min, remove_max):
     return board
 
 
-# ----------------------------------------------------------
-# API ENDPOINTS
-# ----------------------------------------------------------
-
+#flask part
 @app.route("/generate", methods=["GET"])
 def generate_api():
     difficulty = request.args.get("difficulty", "easy").lower()
@@ -216,7 +172,6 @@ def generate_api():
 
     puzzle = generate_puzzle(remove_min, remove_max)
 
-    # Return solution as well for GAME MODE
     solution = copy.deepcopy(puzzle)
     solve(solution)
 
